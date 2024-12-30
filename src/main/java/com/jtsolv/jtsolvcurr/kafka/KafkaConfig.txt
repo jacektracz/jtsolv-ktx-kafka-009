@@ -1,0 +1,72 @@
+package com.jtsolv.jtsolvcurr.kafka;
+
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.KafkaListenerContainerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+
+
+import java.util.HashMap;
+import java.util.Map;
+
+@EnableKafka
+@Configuration
+@Profile("concurrency")
+public class KafkaConfig {
+
+    /*
+    @Bean
+    public ConcurrentMessageListenerContainer<String, String> messageListenerContainer() {
+        ConcurrentMessageListenerContainerConfig config = new ConcurrentMessageListenerContainerConfig();
+        config.setConcurrency(5);
+
+        return new ConcurrentMessageListenerContainer<>(config);
+    }
+*/
+    @Bean
+    public KafkaListenerContainerFactory<?> factory() {
+        // Custom consumer properties
+        Map<String, Object> consumerProps = new HashMap<>();
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "group_id");
+        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+
+        // Custom ConsumerFactory
+        ConsumerFactory<String, String> consumerFactory = new DefaultKafkaConsumerFactory<>(consumerProps);
+
+        // Custom MessageListenerContainerFactory
+        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory);
+        factory.setConcurrency(5);  // Setting concurrency
+
+        return factory;
+    }
+
+    @Bean
+    public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, String>> kafkaListenerContainerFactory() {
+        // Consumer configurations
+        Map<String, Object> consumerProps = new HashMap<>();
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "group_id");
+        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+
+        // ConsumerFactory with custom properties
+        ConsumerFactory<String, String> consumerFactory = new DefaultKafkaConsumerFactory<>(consumerProps);
+
+        // Creating the KafkaListenerContainerFactory with concurrency
+        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory);
+        factory.setConcurrency(5);  // Set concurrency to 5 (number of threads)
+
+        return factory;
+    }
+}
